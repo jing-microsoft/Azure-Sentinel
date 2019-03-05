@@ -1,0 +1,21 @@
+// Name: Find users that have been added to tenant admin role
+// Author: Jing Nghik <jing.nghik@microsoft.com>
+//
+// Description: This query results will show any users that have been added as global admin. From here you would launch a logicapps or flow to alert in teams as an FYI or informational message//
+// DataSource: #AuditLogs
+//
+// Severity: Medium or Low
+//
+// Techniques: #Privilege #Elevation
+//
+// This query will find any events related to adding admin role to a user. 
+AuditLogs
+| where OperationName == "Add member to role"
+| project
+    OperationName,
+    TimeGenerated, 
+    CorrelationId, 
+    Modifier=strcat(parse_json(InitiatedBy).user.userPrincipalName), //extracts who modified the role
+    TargetUser=strcat(parse_json(TargetResources)[0].userPrincipalName), //extracts the target user
+    TargetRole=strcat(parse_json(TargetResources)[0].modifiedProperties[3].newValue) //extracts the target role
+| where TargetRole contains "TenantAdmins"
